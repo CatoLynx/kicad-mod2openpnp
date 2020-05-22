@@ -33,7 +33,7 @@ def main():
         pads = []
         pad_def = re.compile(r"\(pad (?P<name>.+) smd (?P<type>.+) \(at (?P<x>[-\d.]+) (?P<y>[-\d.]+)(?: (?P<rotation>[-\d.]+))*\) \(size (?P<width>[-\d.]+) (?P<height>[-\d.]+)\) \(layers .+?\)(?: \(roundrect_rratio (?P<roundness>[-\d.]+)\))*\)")
         for line in in_data.splitlines():
-            match = pad_def.match(line)
+            match = pad_def.search(line)
             if match:
                 pads.append(match.groupdict())
         
