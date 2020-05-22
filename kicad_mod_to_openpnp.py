@@ -38,8 +38,8 @@ def main():
                 pads.append(match.groupdict())
         
         if not pads:
-            print("No pads found! Aborting.")
-            return
+            print("No pads found! Skipping.")
+            continue
         
         package = ET.SubElement(packages, "package", version="1.1", id=name)
         footprint = ET.SubElement(package, "footprint", units="Millimeters")
