@@ -1,9 +1,9 @@
 import argparse
 import os
-import re
 import xml.etree.ElementTree as ET
 
 from pathlib import Path
+from pykicad.module import Module
 from xml.dom import minidom
 
 
@@ -26,62 +26,53 @@ def main():
     
     for input_filename in inputs:
         name = Path(input_filename).stem
+        mod = Module.from_file(input_filename)
         
-        with open(input_filename, 'r') as in_file:
-            in_data = in_file.read()
-        
-        pads = []
-        pad_def = re.compile(r"\(pad (?P<name>.+) smd (?P<type>.+) \(at (?P<x>[-\d.]+) (?P<y>[-\d.]+)(?: (?P<rotation>[-\d.]+))*\) \(size (?P<width>[-\d.]+) (?P<height>[-\d.]+)\) \(layers .+?\)(?: \(roundrect_rratio (?P<roundness>[-\d.]+)\))*\)")
-        for line in in_data.splitlines():
-            match = pad_def.search(line)
-            if match:
-                pads.append(match.groupdict())
-        
-        if not pads:
+        if not mod.pads:
             print("No pads found! Skipping.")
             continue
         
         package = ET.SubElement(packages, "package", version="1.1", id=name)
         footprint = ET.SubElement(package, "footprint", units="Millimeters")
-        for pad in pads:
-            if pad['type'] == 'rect':
+        for pad in mod.pads:
+            if pad.shape == 'rect':
                 ET.SubElement(footprint, "pad",
-                    name=pad['name'],
-                    x=pad['x'],
-                    y=str(float(pad['y'])*-1),
-                    width=pad['width'],
-                    height=pad['height'],
-                    rotation=pad['rotation'] or "0.0",
+                    name=pad.name,
+                    x=str(pad.at[0]),
+                    y=str(pad.at[1] * -1),
+                    width=str(pad.size[0]),
+                    height=str(pad.size[1]),
+                    rotation=str(pad.at[2] if len(pad.at) > 2 else 0.0),
                     roundness="0.0"
                 )
-            elif pad['type'] == 'roundrect':
+            elif pad.shape == 'roundrect':
                 ET.SubElement(footprint, "pad",
-                    name=pad['name'],
-                    x=pad['x'],
-                    y=str(float(pad['y'])*-1),
-                    width=pad['width'],
-                    height=pad['height'],
-                    rotation=pad['rotation'] or "0.0",
-                    roundness=str(float(pad['roundness'])*200)
+                    name=pad.name,
+                    x=str(pad.at[0]),
+                    y=str(pad.at[1] * -1),
+                    width=str(pad.size[0]),
+                    height=str(pad.size[1]),
+                    rotation=str(pad.at[2] if len(pad.at) > 2 else 0.0),
+                    roundness=str(pad.roundrect_rratio * 200)
                 )
-            elif pad['type'] == 'circle':
+            elif pad.shape == 'circle':
                 ET.SubElement(footprint, "pad",
-                    name=pad['name'],
-                    x=pad['x'],
-                    y=str(float(pad['y'])*-1),
-                    width=pad['width'],
-                    height=pad['width'],
+                    name=pad.name,
+                    x=str(pad.at[0]),
+                    y=str(pad.at[1] * -1),
+                    width=str(pad.size[0]),
+                    height=str(pad.size[0]),
                     rotation="0.0",
                     roundness="100.0"
                 )
-            elif pad['type'] == 'oval':
+            elif pad.shape == 'oval':
                 ET.SubElement(footprint, "pad",
-                    name=pad['name'],
-                    x=pad['x'],
-                    y=str(float(pad['y'])*-1),
-                    width=pad['width'],
-                    height=pad['height'],
-                    rotation=pad['rotation'] or "0.0",
+                    name=pad.name,
+                    x=str(pad.at[0]),
+                    y=str(pad.at[1] * -1),
+                    width=str(pad.size[0]),
+                    height=str(pad.size[1]),
+                    rotation=str(pad.at[2] if len(pad.at) > 2 else 0.0),
                     roundness="100.0"
                 )
     
